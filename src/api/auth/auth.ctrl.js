@@ -1,18 +1,10 @@
 import Joi from 'joi';
-import User from '../../models/user';
+import User from '../../models/user.js';
 
-export const signUp = async ctx => {
+export const signUp = async (ctx) => {
   const schema = Joi.object().keys({
-    userid: Joi.string()
-      .regex(/^[A-Za-z]\w+$/)
-      .min(5)
-      .max(20)
-      .required(),
-    username: Joi.string()
-      .alphanum()
-      .min(3)
-      .max(20)
-      .required(),
+    email: Joi.string().email().required(),
+    username: Joi.string().alphanum().min(3).max(20).required(),
     password: Joi.string().required(),
   });
 
@@ -23,39 +15,46 @@ export const signUp = async ctx => {
     return;
   }
 
-  const { userid, username, password } = ctx.request.body;
+  const { email, username, password } = ctx.request.body;
   try {
-    const exist = await User.findByUserid(userid);
+    const exist = await User.findByEmail(email);
     if (exist) {
       ctx.status = 409;
       return;
     }
-    const user = new User({ userid, username });
-    await user.setPasswrod(password);
+    const user = new User({ email, username });
+    await user.setPassword(password);
     await user.save();
     ctx.body = user.serialize();
+    const token = user.generateToken();
+    ctx.cookies.set('access_token', token, {
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+      httpOnly: true,
+    });
   } catch (e) {
     ctx.throw(500, e);
   }
 };
 
-export const signIn = async ctx => {
-  const { userid, password } = ctx.request.body;
+export const signIn = async (ctx) => {
+  const { email, password } = ctx.request.body;
 
-  if (!userid || !password) {
+  if (!email || !password) {
     ctx.status = 400;
     return;
   }
 
   try {
-    const user = await User.findByUserid(userid);
+    const user = await User.findByEmail(email);
     if (!user) {
       ctx.status = 401;
+      ctx.body = 'email';
       return;
     }
     const valid = await user.checkPassword(password);
     if (!valid) {
       ctx.status = 401;
+      ctx.body = 'password';
       return;
     }
     ctx.body = user.serialize();
@@ -69,7 +68,7 @@ export const signIn = async ctx => {
   }
 };
 
-export const userCheck = async ctx => {
+export const userCheck = async (ctx) => {
   const { user } = ctx.state;
   if (!user) {
     ctx.status = 401;
@@ -78,7 +77,13 @@ export const userCheck = async ctx => {
   ctx.body = user;
 };
 
-export const signOut = async ctx => {
+export const signOut = async (ctx) => {
   ctx.cookies.set('access_token');
   ctx.status = 204;
+};
+
+export const setAdmin = async (ctx) => {
+  const { email, boolean } = ctx.request.body;
+  const user = await User.findByEmail(email);
+  user.setAdmin(boolean);
 };
