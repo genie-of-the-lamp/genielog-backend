@@ -169,7 +169,7 @@ export const update = async (ctx) => {
   const schema = Joi.object().keys({
     title: Joi.string(),
     body: Joi.string(),
-    tags: Joi.array().items(Joi.string()),
+    // tags: Joi.array().items(Joi.string()),
   });
 
   const result = Joi.validate(ctx.request.body, schema);
