@@ -22,7 +22,7 @@
     "nodemon": "^2.0.2"
   },
   "scripts": {
-    "start": "node src",
+    "start": "node --experimental-modules src/index.js",
     "start:dev": "nodemon  --watch src/ --experimental-modules src/index.js"
   },
   "type": "module"
