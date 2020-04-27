@@ -8,7 +8,6 @@ import jwtMiddleware from './lib/jwtMiddlewrare.js';
 import serve from 'koa-static';
 import path from 'path';
 import send from 'koa-send';
-const { dirname } = path;
 
 dotenv.config();
 const { PORT, DB_URI } = process.env;
@@ -32,7 +31,11 @@ app.use(jwtMiddleware);
 
 app.use(router.routes()).use(router.allowedMethods());
 
-const buildDirectory = path.resolve(dirname('..\\genielog-frontend\\build\\.'));
+const __dirname = path.resolve();
+const buildDirectory = path.resolve(
+  __dirname,
+  '..\\genielog-frontend\\build\\.',
+);
 app.use(serve(buildDirectory));
 app.use(async (ctx) => {
   if (ctx.status === 404 && ctx.path.indexOf('/api') !== 0) {
